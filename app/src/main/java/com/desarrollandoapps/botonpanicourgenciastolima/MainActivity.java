@@ -59,8 +59,10 @@ public class MainActivity extends AppCompatActivity {
                 Toast.makeText(this, "Debe seleccionar el tipo de emergencia", Toast.LENGTH_SHORT).show();
                 break;
             case ACCIDENTE_AUTO:
-                ACCIDENTE_MOTO:
+            case ACCIDENTE_MOTO:
                 Toast.makeText(this, "CARRO / MOTO", Toast.LENGTH_SHORT).show();
+                break;
+            case CAIDA_DESMAYO:
                 break;
             case LLAMAR:
                 break;
