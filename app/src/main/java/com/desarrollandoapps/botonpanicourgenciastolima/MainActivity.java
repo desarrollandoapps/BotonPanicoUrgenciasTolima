@@ -9,6 +9,7 @@ import android.location.Location;
 import android.location.LocationListener;
 import android.location.LocationManager;
 import android.os.Bundle;
+import android.support.annotation.StringRes;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AppCompatActivity;
@@ -17,6 +18,7 @@ import android.view.View;
 import android.widget.EditText;
 import android.widget.ImageButton;
 import android.widget.ProgressBar;
+import android.widget.TextView;
 import android.widget.Toast;
 
 public class MainActivity extends AppCompatActivity {
@@ -29,9 +31,12 @@ public class MainActivity extends AppCompatActivity {
 
     private ImageButton btnSolicitarAmbulancia;
     private ProgressBar progressBar;
+    private TextView lblTipoEmergencia;
 
-    Location ubicacion;
-    int tipoEmergencia;
+    private Location ubicacion;
+    private int tipoEmergencia;
+    private int numeroInvolucrados;
+    private boolean enviado;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -39,10 +44,13 @@ public class MainActivity extends AppCompatActivity {
         setContentView(R.layout.activity_main);
 
         btnSolicitarAmbulancia = findViewById(R.id.btnSolicitarAmbulancia);
+        lblTipoEmergencia = findViewById(R.id.lblTipoEmergencia);
         progressBar = findViewById(R.id.progressBar);
         progressBar.setVisibility(View.INVISIBLE);
 
         tipoEmergencia = SIN_ASIGNAR;
+        numeroInvolucrados = 0;
+        enviado = false;
 
         int chequeoPermiso = ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION);
 
@@ -59,59 +67,63 @@ public class MainActivity extends AppCompatActivity {
 
     public void solicitarAmbulancia(View v)
     {
-        switch (tipoEmergencia)
+        if (!enviado)
         {
-            case SIN_ASIGNAR:
-                Toast.makeText(this, "Debe seleccionar el tipo de emergencia", Toast.LENGTH_SHORT).show();
-                break;
-            case ACCIDENTE_AUTO:
-            case ACCIDENTE_MOTO:
-                Toast.makeText(this, "CARRO / MOTO", Toast.LENGTH_SHORT).show();
-                progressBar.setVisibility(View.VISIBLE);
-                do {
+            switch (tipoEmergencia)
+            {
+                case SIN_ASIGNAR:
+                    Toast.makeText(this, "Debe seleccionar el tipo de emergencia", Toast.LENGTH_SHORT).show();
+                    break;
+                case ACCIDENTE_AUTO:
+                case ACCIDENTE_MOTO:
+                case CAIDA_DESMAYO:
+                    progressBar.setVisibility(View.VISIBLE);
                     obtenerUbicacion();
-                } while (ubicacion == null);
-                progressBar.setVisibility(View.INVISIBLE);
-                obtenerNumeroInvolucrados();
-                break;
-            case CAIDA_DESMAYO:
-                break;
-            case LLAMAR:
-                break;
+                    progressBar.setVisibility(View.INVISIBLE);
+                    obtenerNumeroInvolucrados();
+                    break;
+                case LLAMAR:
+                    break;
+            }
+        }
+        else
+        {
+            Toast.makeText(this, "Ya ha enviado la información.", Toast.LENGTH_SHORT).show();
         }
     }
 
-    public int obtenerNumeroInvolucrados()
+    public void limpiar()
     {
-        int involucrados = 0;
+        tipoEmergencia = 0;
+        numeroInvolucrados = 0;
+    }
 
+    public void enviarDatos()
+    {
+        String datos = "Emergencia tipo: " + tipoEmergencia + "\n" +
+                        "Número de involucrados: " + numeroInvolucrados + "\n" +
+                        "Longitud: " + ubicacion.getLongitude() + "\n" +
+                        "Latitud: " + ubicacion.getLatitude();
+        Toast.makeText(this, datos, Toast.LENGTH_LONG).show();
+        enviado = true;
+    }
+
+    public void obtenerNumeroInvolucrados()
+    {
         final AlertDialog.Builder dialogo = new AlertDialog.Builder(this);
         dialogo.setTitle(R.string.dialog_title);
-
-        final EditText input = new EditText(this);
-        input.setInputType(InputType.TYPE_CLASS_NUMBER);
-        input.setTextAlignment(View.TEXT_ALIGNMENT_CENTER);
-
-        dialogo.setView(input);
-        //Botón de aceptar
-        dialogo.setPositiveButton("Ingresar", new DialogInterface.OnClickListener() {
+        dialogo.setItems(R.array.num_involucrados, new DialogInterface.OnClickListener() {
             @Override
             public void onClick(DialogInterface dialogInterface, int i) {
-                //Enviar a servidor
-                Toast.makeText(MainActivity.this, "Entró", Toast.LENGTH_SHORT).show();
+                //Toast.makeText(MainActivity.this, "Involucrados: " + i, Toast.LENGTH_SHORT).show();
+                numeroInvolucrados = i + 1;
+                enviarDatos();
+                limpiar();
             }
         });
-        //Botón de cancelar
-        dialogo.setNegativeButton("Cancelar", new DialogInterface.OnClickListener() {
-            @Override
-            public void onClick(DialogInterface dialogInterface, int i) {
-                dialogInterface.cancel();
-            }
-        });
+
         //Muestra el dialogo
         dialogo.show();
-
-        return involucrados;
     }
 
     public void obtenerUbicacion()
@@ -122,7 +134,7 @@ public class MainActivity extends AppCompatActivity {
         // Define a listener that responds to location updates
         LocationListener locationListener = new LocationListener() {
             public void onLocationChanged(Location location) {
-                cargarUbicacion(location);
+                ubicacion = location;
                 //Toast.makeText(MainActivity.this, "Latitud: " + ubicacion.getLatitude() + "\nLongitud: " + ubicacion.getLongitude(), Toast.LENGTH_SHORT).show();
             }
 
@@ -138,27 +150,25 @@ public class MainActivity extends AppCompatActivity {
         locationManager.requestLocationUpdates(LocationManager.NETWORK_PROVIDER, 0, 0, locationListener);
     }
 
-    public void cargarUbicacion(Location ubicacion)
-    {
-        this.ubicacion = ubicacion;
-    }
-
     public void cargarAuto(View v)
     {
         tipoEmergencia = ACCIDENTE_AUTO;
-        Toast.makeText(this, "Ha seleccionado emergencia por accidente de automóviles", Toast.LENGTH_SHORT).show();
+        lblTipoEmergencia.setText(getString(R.string.tipo_emergencia) + " " + getString(R.string.btn_auto));
+        //Toast.makeText(this, "Ha seleccionado emergencia por accidente de automóviles", Toast.LENGTH_SHORT).show();
     }
 
     public void cargarMoto(View v)
     {
         tipoEmergencia = ACCIDENTE_MOTO;
-        Toast.makeText(this, "Ha seleccionado emergencia por accidente de motos", Toast.LENGTH_SHORT).show();
+        lblTipoEmergencia.setText(getString(R.string.tipo_emergencia) + " " + getString(R.string.btn_moto));
+        //Toast.makeText(this, "Ha seleccionado emergencia por accidente de motos", Toast.LENGTH_SHORT).show();
     }
 
     public void cargarCaida(View v)
     {
         tipoEmergencia = CAIDA_DESMAYO;
-        Toast.makeText(this, "Ha seleccionado emergencia por caída o desmayo", Toast.LENGTH_SHORT).show();
+        lblTipoEmergencia.setText(getString(R.string.tipo_emergencia) + " " + getString(R.string.btn_desmayo));
+        //Toast.makeText(this, "Ha seleccionado emergencia por caída o desmayo", Toast.LENGTH_SHORT).show();
     }
 
     public void cargarLlamada(View v)
