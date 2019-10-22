@@ -4,24 +4,43 @@ import android.Manifest;
 import android.app.AlertDialog;
 import android.content.Context;
 import android.content.DialogInterface;
+import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.location.Location;
 import android.location.LocationListener;
 import android.location.LocationManager;
+import android.net.Uri;
 import android.os.Bundle;
-import android.support.annotation.StringRes;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AppCompatActivity;
-import android.text.InputType;
 import android.view.View;
-import android.widget.EditText;
 import android.widget.ImageButton;
 import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.android.volley.RequestQueue;
+import com.android.volley.Response;
+import com.android.volley.VolleyError;
+import com.android.volley.toolbox.JsonRequest;
+import com.android.volley.toolbox.Volley;
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
+import com.loopj.android.http.AsyncHttpClient;
+import com.loopj.android.http.AsyncHttpResponseHandler;
+import com.loopj.android.http.RequestParams;
+
+import org.json.JSONObject;
+
+import java.util.ArrayList;
+import java.util.HashMap;
+
+import cz.msebera.android.httpclient.Header;
+
 public class MainActivity extends AppCompatActivity {
+
+    public final static String DIR_PHP_ESCRITURA = "http://gesicom.co/paginas/ambulancias/insertar_dato_app.php";
 
     public final static int SIN_ASIGNAR = 0;
     public final static int ACCIDENTE_AUTO = 1;
@@ -37,6 +56,8 @@ public class MainActivity extends AppCompatActivity {
     private int tipoEmergencia;
     private int numeroInvolucrados;
     private boolean enviado;
+    private RequestQueue requestQueue;
+    private JsonRequest jsonRequest;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -62,10 +83,11 @@ public class MainActivity extends AppCompatActivity {
             }
         }
 
-        obtenerUbicacion();
+        requestQueue  = Volley.newRequestQueue(this);
 
         GPSManager gps = new GPSManager(this);
         gps.start();
+        obtenerUbicacion();
     }
 
     public void solicitarAmbulancia(View v)
@@ -91,8 +113,6 @@ public class MainActivity extends AppCompatActivity {
                         Toast.makeText(this, R.string.ubicacion_null, Toast.LENGTH_SHORT).show();
                     }
                     break;
-                case LLAMAR:
-                    break;
             }
         }
         else
@@ -109,12 +129,51 @@ public class MainActivity extends AppCompatActivity {
 
     public void enviarDatos()
     {
-        String datos = "Emergencia tipo: " + tipoEmergencia + "\n" +
-                        "Número de involucrados: " + numeroInvolucrados + "\n" +
-                        "Longitud: " + ubicacion.getLongitude() + "\n" +
-                        "Latitud: " + ubicacion.getLatitude();
-        Toast.makeText(this, datos, Toast.LENGTH_LONG).show();
-        enviado = true;
+        /*
+         * Subir datos de accesos
+         */
+        AsyncHttpClient cliente = new AsyncHttpClient();
+        RequestParams parametros = new RequestParams();
+        progressBar.setVisibility(View.VISIBLE);
+
+        /*
+        Crear Json
+         */
+        String tipoStr = String.valueOf(tipoEmergencia);
+        String longitudStr = String.valueOf(ubicacion.getLongitude());
+        String latitudStr = String.valueOf(ubicacion.getLatitude());
+        String involucradosStr = String.valueOf(numeroInvolucrados);
+
+        ArrayList<HashMap<String, String>> registro = new ArrayList<>();
+        HashMap<String, String> map = new HashMap<>();
+        map.put("tipo", tipoStr);
+        map.put("longitud", longitudStr);
+        map.put("latitud", latitudStr);
+        map.put("involucrados", involucradosStr);
+
+        Gson gson = new GsonBuilder().create();
+        registro.add(map);
+        String json = gson.toJson( registro );
+
+        parametros.put("registrosJSON", json);
+
+        cliente.post(DIR_PHP_ESCRITURA, parametros, new AsyncHttpResponseHandler() {
+            @Override
+            public void onSuccess(int statusCode, Header[] headers, byte[] responseBody) {
+                System.out.println(statusCode);
+                progressBar.setVisibility(View.INVISIBLE);
+
+                Toast.makeText(MainActivity.this, R.string.datos_enviados, Toast.LENGTH_LONG).show();
+                enviado = true;
+            }
+
+            @Override
+            public void onFailure(int statusCode, Header[] headers, byte[] responseBody, Throwable error) {
+                progressBar.setVisibility(View.INVISIBLE);
+                Toast.makeText(MainActivity.this, "Error: " + statusCode, Toast.LENGTH_SHORT).show();
+            }
+        });
+
     }
 
     public void obtenerNumeroInvolucrados()
@@ -180,9 +239,13 @@ public class MainActivity extends AppCompatActivity {
         //Toast.makeText(this, "Ha seleccionado emergencia por caída o desmayo", Toast.LENGTH_SHORT).show();
     }
 
-    public void cargarLlamada(View v)
+    public void llamar(View v)
     {
         tipoEmergencia = LLAMAR;
+        String telefono = "tel:0382709600";
+        Intent intent = new Intent(Intent.ACTION_DIAL);
+        intent.setData(Uri.parse(telefono));
+        startActivity(intent);
     }
 
 }

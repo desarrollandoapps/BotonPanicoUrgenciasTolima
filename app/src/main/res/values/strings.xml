@@ -1,5 +1,5 @@
 <resources>
-    <string name="app_name">Botón de Panico Urgencias Ibagué</string>
+    <string name="app_name">Botón de Panico Emergencias Ibagué</string>
     <string name="titulo">Botón de Panico Urgenicas Ibagué</string>
     <string name="identificar_emergencia">Ayúdanos a identificar la emergencia:</string>
     <string name="btn_auto">Choque autos</string>
@@ -7,8 +7,10 @@
     <string name="btn_desmayo">Caída / Desmayo</string>
     <string name="btn_llamanos">Llámanos</string>
     <string name="ubicacion_actual">La ubicación actual es: </string>
+    <string name="datos_enviados">Datos enviados</string>
     <string name="latitud">Latitud: </string>
     <string name="longitud">Longitud: </string>
+    <string name="involucrados">Involucrados: </string>
     <string name="habilitar_gps">Habilitar GPS</string>
     <string name="gps_deshabilitado">Por favor confirme si el GPS está habilitado en su dispositivo.</string>
     <string name="ubicacion_null">No se ha detectado ubicación </string>
