@@ -6,6 +6,12 @@
     <string name="btn_moto">Choque motos</string>
     <string name="btn_desmayo">Caída / Desmayo</string>
     <string name="btn_llamanos">Llámanos</string>
+    <string name="ubicacion_actual">La ubicación actual es: </string>
+    <string name="latitud">Latitud: </string>
+    <string name="longitud">Longitud: </string>
+    <string name="habilitar_gps">Habilitar GPS</string>
+    <string name="gps_deshabilitado">Por favor confirme si el GPS está habilitado en su dispositivo.</string>
+    <string name="ubicacion_null">No se ha detectado ubicación </string>
     <string name="pause">Pausa</string>
     <string name="resume">Continuar</string>
     <string name="tipo_emergencia">Tipo de emergencia: </string>

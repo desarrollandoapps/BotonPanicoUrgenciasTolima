@@ -61,8 +61,11 @@ public class MainActivity extends AppCompatActivity {
                 ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.ACCESS_FINE_LOCATION}, 1);
             }
         }
+
         obtenerUbicacion();
 
+        GPSManager gps = new GPSManager(this);
+        gps.start();
     }
 
     public void solicitarAmbulancia(View v)
@@ -80,7 +83,13 @@ public class MainActivity extends AppCompatActivity {
                     progressBar.setVisibility(View.VISIBLE);
                     obtenerUbicacion();
                     progressBar.setVisibility(View.INVISIBLE);
-                    obtenerNumeroInvolucrados();
+                    if (ubicacion != null)
+                    {
+                        obtenerNumeroInvolucrados();
+                    }
+                    else {
+                        Toast.makeText(this, R.string.ubicacion_null, Toast.LENGTH_SHORT).show();
+                    }
                     break;
                 case LLAMAR:
                     break;
