@@ -1,19 +1,22 @@
 package com.desarrollandoapps.botonpanicourgenciastolima;
 
 import android.Manifest;
+import android.app.AlertDialog;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.pm.PackageManager;
 import android.location.Location;
 import android.location.LocationListener;
 import android.location.LocationManager;
+import android.os.Bundle;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
-import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
-import android.os.Bundle;
+import android.text.InputType;
 import android.view.View;
+import android.widget.EditText;
 import android.widget.ImageButton;
+import android.widget.ProgressBar;
 import android.widget.Toast;
 
 public class MainActivity extends AppCompatActivity {
@@ -24,7 +27,8 @@ public class MainActivity extends AppCompatActivity {
     public final static int CAIDA_DESMAYO = 3;
     public final static int LLAMAR = 4;
 
-    ImageButton btnSolicitarAmbulancia;
+    private ImageButton btnSolicitarAmbulancia;
+    private ProgressBar progressBar;
 
     Location ubicacion;
     int tipoEmergencia;
@@ -35,6 +39,9 @@ public class MainActivity extends AppCompatActivity {
         setContentView(R.layout.activity_main);
 
         btnSolicitarAmbulancia = findViewById(R.id.btnSolicitarAmbulancia);
+        progressBar = findViewById(R.id.progressBar);
+        progressBar.setVisibility(View.INVISIBLE);
+
         tipoEmergencia = SIN_ASIGNAR;
 
         int chequeoPermiso = ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION);
@@ -46,13 +53,12 @@ public class MainActivity extends AppCompatActivity {
                 ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.ACCESS_FINE_LOCATION}, 1);
             }
         }
+        obtenerUbicacion();
 
     }
 
     public void solicitarAmbulancia(View v)
     {
-        obtenerUbicacion();
-
         switch (tipoEmergencia)
         {
             case SIN_ASIGNAR:
@@ -61,6 +67,12 @@ public class MainActivity extends AppCompatActivity {
             case ACCIDENTE_AUTO:
             case ACCIDENTE_MOTO:
                 Toast.makeText(this, "CARRO / MOTO", Toast.LENGTH_SHORT).show();
+                progressBar.setVisibility(View.VISIBLE);
+                do {
+                    obtenerUbicacion();
+                } while (ubicacion == null);
+                progressBar.setVisibility(View.INVISIBLE);
+                obtenerNumeroInvolucrados();
                 break;
             case CAIDA_DESMAYO:
                 break;
@@ -73,23 +85,31 @@ public class MainActivity extends AppCompatActivity {
     {
         int involucrados = 0;
 
-        AlertDialog.Builder builder = new AlertDialog.Builder(getApplicationContext());
-        builder.setMessage(R.string.dialog_message)
-                .setTitle(R.string.dialog_title);
+        final AlertDialog.Builder dialogo = new AlertDialog.Builder(this);
+        dialogo.setTitle(R.string.dialog_title);
 
-        builder.setPositiveButton(R.string.ok, new DialogInterface.OnClickListener() {
-            public void onClick(DialogInterface dialog, int id) {
-                // Enviar a servidor
-                Toast.makeText(MainActivity.this, "Enviar a servidor:\nLongitud: " + ubicacion.getLongitude() + "\nLatitud: " + ubicacion.getLatitude(), Toast.LENGTH_SHORT).show();
+        final EditText input = new EditText(this);
+        input.setInputType(InputType.TYPE_CLASS_NUMBER);
+        input.setTextAlignment(View.TEXT_ALIGNMENT_CENTER);
+
+        dialogo.setView(input);
+        //Botón de aceptar
+        dialogo.setPositiveButton("Ingresar", new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialogInterface, int i) {
+                //Enviar a servidor
+                Toast.makeText(MainActivity.this, "Entró", Toast.LENGTH_SHORT).show();
             }
         });
-        builder.setNegativeButton(R.string.cancel, new DialogInterface.OnClickListener() {
-            public void onClick(DialogInterface dialog, int id) {
-                dialog.cancel();
+        //Botón de cancelar
+        dialogo.setNegativeButton("Cancelar", new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialogInterface, int i) {
+                dialogInterface.cancel();
             }
         });
-
-        AlertDialog dialog = builder.create();
+        //Muestra el dialogo
+        dialogo.show();
 
         return involucrados;
     }
